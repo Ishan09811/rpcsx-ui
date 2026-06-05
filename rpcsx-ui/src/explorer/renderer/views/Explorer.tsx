@@ -1,6 +1,6 @@
 import { ComponentProps, memo, useEffect, useRef, useState } from 'react';
 import * as React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View, FlatList, Modal, useWindowDimensions, ImageBackground } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View, FlatList, Modal, useWindowDimensions, ImageBackground, TextInput } from 'react-native';
 import { useThemeColor } from '$core/useThemeColor'
 import ThemedIcon from '$core/ThemedIcon';
 import { ThemedText } from '$core/ThemedText';
@@ -533,11 +533,31 @@ const ExplorerStyles = StyleSheet.create({
 });
 
 export function Explorer(props?: Props) {
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const insets = useSafeAreaInsets();
     const [background, setBackground] = useState<string | undefined>(undefined);
     const [activeTab, setActiveTab] = useState(0);
     const [games, setGames] = useState<ExplorerItem[]>([]);
     const [updateId, setUpdateId] = useState(0);
+    const surfaceContainer = useThemeColor("surfaceContainer");
+    const primary = useThemeColor("primary");
+    const outline = useThemeColor("outline");
+    const text = useThemeColor("text");
+
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        games.length = 0;
+        setGames([]);
+        setUpdateId(id => id + 1);
+
+        self.explorerGet({
+          query: searchQuery.length > 0 ? searchQuery : undefined
+        });
+      }, 150);
+
+      return () => clearTimeout(timeout);
+    }, [searchQuery]);
 
     const safeArea = StyleSheet.create({
         header: {
@@ -600,13 +620,44 @@ export function Explorer(props?: Props) {
                     </View>
                     <View style={[ExplorerStyles.containerButtons]}>
                         <View style={ExplorerStyles.containerButtonItems}>
-                            <HapticPressable><ThemedIcon iconSet="Ionicons" name="search" size={40} /></HapticPressable>
+                            <HapticPressable onPress={() => setSearchOpen(v => !v)}>
+                              <ThemedIcon iconSet="Ionicons" name="search" size={40} />
+                            </HapticPressable>
                             <HapticPressable onPress={() => settings.pushSettingsView({})}><ThemedIcon iconSet="Ionicons" name="settings-outline" size={40} /></HapticPressable>
                             <HapticPressable onPress={() => login.pushLoginScreenView({})}><ThemedIcon iconSet="FontAwesome6" name="user" size={40} /></HapticPressable>
                         </View>
                     </View>
                 </View>
 
+                {searchOpen && (
+                  <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      borderRadius: 20,
+                      paddingHorizontal: 16,
+                      height: 48,
+                      backgroundColor: surfaceContainer,
+                    }}>
+                      <ThemedIcon iconSet="Ionicons" name="search" size={20} />
+                      <TextInput
+                        style={{
+                          flex: 1,
+                          marginLeft: 10,
+                          fontSize: 18,
+                          color: text,
+                       }}
+                       placeholder="Search"
+                       placeholderTextColor={outline}
+                       value={searchQuery}
+                       onChangeText={setSearchQuery}
+                       autoFocus
+                       selectionColor={primary}
+                       cursorColor={primary}
+                      />
+                    </View>
+                  </View>
+                )}
                 <LeftRightViewSelector key={updateId} list={screens} style={[ExplorerStyles.contentContainer, safeArea.content]} renderItem={item =>
                     <ExplorerView items={item.view} setBackground={setBackground} />} selectedItem={activeTab} />
             </View>
