@@ -6,6 +6,7 @@ import { BackHandler } from 'react-native';
 import { useState, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { registerRootComponent } from 'expo';
+import { Platform } from 'react-native';
 
 // import { Asset } from 'expo-asset';
 
@@ -61,6 +62,21 @@ export function main(
     bridge.onViewPush(viewPush);
     bridge.onViewSet(viewSet);
     bridge.onViewPop(viewPop);
+
+    // Fixes the default focus outline on web, which looks bad
+    if (Platform.OS === 'web') {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            input:focus,
+            input:focus-visible,
+            textarea:focus,
+            textarea:focus-visible {
+                outline: none !important;
+                box-shadow: none !important;
+            }
+       `;
+        document.head.appendChild(style);
+    }
 
     registerRootComponent(App);
 }
